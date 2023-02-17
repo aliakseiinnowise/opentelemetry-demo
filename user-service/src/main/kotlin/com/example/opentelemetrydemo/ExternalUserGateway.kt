@@ -1,6 +1,10 @@
 package com.example.opentelemetrydemo
 
+import io.opentelemetry.api.OpenTelemetry
+import io.opentelemetry.api.baggage.Baggage
+import io.opentelemetry.instrumentation.spring.webflux.v5_0.client.SpringWebfluxTelemetry
 import kotlinx.coroutines.reactor.awaitSingle
+import mu.KLogging
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToFlux
@@ -8,14 +12,33 @@ import org.springframework.web.reactive.function.client.bodyToFlux
 @Component
 class ExternalUserGateway(
     webClientBuilder: WebClient.Builder,
+    openTelemetry: OpenTelemetry,
 ) {
 
-    private val webClient = webClientBuilder.baseUrl("http://localhost:8081").build()
+    private val webClient: WebClient
 
-    suspend fun getUsers() = webClient.get()
-        .uri("/users")
-        .retrieve()
-        .bodyToFlux<User>()
-        .collectList()
-        .awaitSingle()
+    init {
+        val instrumentation = SpringWebfluxTelemetry.create(openTelemetry)
+
+        webClient = webClientBuilder
+            .baseUrl("http://localhost:8081")
+            .filters(instrumentation::addClientTracingFilter)
+            .build()
+    }
+
+    suspend fun getUsers(): List<User> {
+        logger.info { "2: ${Baggage.current().getEntryValue("test")}" }
+
+        return webClient.get()
+            .uri("/users")
+            .retrieve()
+            .bodyToFlux<User>()
+            .collectList()
+            .awaitSingle()
+            .also {
+                logger.info { "3: ${Baggage.current().getEntryValue("test")}" }
+            }
+    }
+
+    companion object : KLogging()
 }

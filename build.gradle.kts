@@ -3,8 +3,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm") version "1.7.22"
     kotlin("plugin.spring") version "1.7.22" apply false
-    id("org.springframework.boot") version "3.0.2" apply false
-    id("io.spring.dependency-management") version "1.1.0" apply false
+    id("org.springframework.boot") version "2.7.8" apply false
+    id("io.spring.dependency-management") version "1.1.0"
 }
 
 repositories {
@@ -29,6 +29,8 @@ subprojects {
     }
 
     dependencies {
+        implementation(platform("io.opentelemetry:opentelemetry-bom:1.23.1"))
+
         implementation("org.jetbrains.kotlin:kotlin-stdlib")
     }
 
