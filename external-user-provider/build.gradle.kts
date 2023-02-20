@@ -12,5 +12,4 @@ dependencies {
         exclude("io.opentelemetry", "opentelemetry-exporter-logging")
         exclude("io.opentelemetry", "opentelemetry-exporter-otlp")
     }
-    implementation("io.opentelemetry.instrumentation:opentelemetry-spring-webflux-5.0:1.23.0-alpha")
 }

@@ -1,10 +1,12 @@
 package com.example.opentelemetrydemo
 
-import io.opentelemetry.api.baggage.Baggage
 import io.opentelemetry.context.Context
+import io.opentelemetry.extension.kotlin.asContextElement
 import io.opentelemetry.instrumentation.reactor.v3_1.ContextPropagationOperator.getOpenTelemetryContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.reactor.ReactorContext
+import kotlinx.coroutines.withContext
 import mu.KLogging
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -12,31 +14,13 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/users")
-class UsersResource {
+class UsersResource(
+    private val userProviderGateway: UserProviderGateway,
+) {
 
     @GetMapping
-    suspend fun getUsers(): List<User> {
-        val reactorContext = currentCoroutineContext()[ReactorContext]!!.context
-        val opentelemeteryContext = getOpenTelemetryContext(reactorContext, Context.current())
-        val testEnvironment = Baggage.fromContext(opentelemeteryContext).getEntryValue("test").toBoolean()
-
-        logger.info { "Test environment: $testEnvironment" }
-
-        return if (testEnvironment) {
-            listOf(User("test", "test@gmail.com"))
-        } else {
-            listOf(
-                User(
-                    name = "Yoshito",
-                    email = "yoshito.amazaki@gmail.com"
-                ),
-                User(
-                    name = "Igor",
-                    email = "igor.shmeltsov@gmail.com",
-                )
-            )
-        }
-
+    suspend fun getUsers() = withOpentelemetryContext {
+        userProviderGateway.getUsers()
     }
 
     companion object : KLogging()
@@ -46,3 +30,13 @@ data class User(
     val name: String,
     val email: String,
 )
+
+suspend fun <T> withOpentelemetryContext(block: suspend CoroutineScope.() -> T): T {
+    val coroutineContext = currentCoroutineContext()
+    val reactorContext = coroutineContext[ReactorContext]?.context ?: throw IllegalStateException("No reactor context is present")
+    val opentelemeteryContext = getOpenTelemetryContext(reactorContext, Context.current())
+
+    return withContext(coroutineContext + opentelemeteryContext.asContextElement()) {
+        block()
+    }
+}
