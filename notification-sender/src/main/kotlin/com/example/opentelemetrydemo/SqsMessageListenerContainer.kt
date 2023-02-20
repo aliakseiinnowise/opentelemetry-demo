@@ -1,12 +1,15 @@
 package com.example.opentelemetrydemo
 
+import io.opentelemetry.extension.kotlin.asContextElement
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -30,6 +33,8 @@ import kotlin.time.Duration.Companion.seconds
 class SqsMessageListenerContainer(
     private val sqsMessageListener: SqsMessageListener,
     private val sqsClient: SqsAsyncClient,
+
+    private val sqsMessageOpentelemetryBaggageContextExtractor: SqsMessageOpentelemetryBaggageContextExtractor,
 ) {
 
     companion object : KLogging() {
@@ -79,23 +84,24 @@ class SqsMessageListenerContainer(
         }
     }
 
-    private suspend fun processMessage(message: Message) {
-        try {
-            logger.info { "Received message with id: ${message.messageId()}" }
+    private suspend fun processMessage(message: Message) =
+        withContext(currentCoroutineContext() + sqsMessageOpentelemetryBaggageContextExtractor.extract(message).asContextElement()) {
+            try {
+                logger.info { "Received message with id: ${message.messageId()}" }
 
-            sqsMessageListener.onMessage(message)
+                sqsMessageListener.onMessage(message)
 
-            val deleteRequest = DeleteMessageRequest.builder()
-                .queueUrl(queueUrl)
-                .receiptHandle(message.receiptHandle())
-                .build()
-            sqsClient.deleteMessage(deleteRequest).await()
+                val deleteRequest = DeleteMessageRequest.builder()
+                    .queueUrl(queueUrl)
+                    .receiptHandle(message.receiptHandle())
+                    .build()
+                sqsClient.deleteMessage(deleteRequest).await()
 
-            logger.info { "Message with id: ${message.messageId()} is processed and successfully removed from sqs" }
-        } catch (e: Exception) {
-            logger.error(e) { "Failed to process sqs message with id: ${message.messageId()}" }
+                logger.info { "Message with id: ${message.messageId()} is processed and successfully removed from sqs" }
+            } catch (e: Exception) {
+                logger.error(e) { "Failed to process sqs message with id: ${message.messageId()}" }
+            }
         }
-    }
 
     @PreDestroy
     fun stop() {
