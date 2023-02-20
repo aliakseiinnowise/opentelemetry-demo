@@ -30,6 +30,7 @@ subprojects {
 
     dependencies {
         implementation(platform("io.opentelemetry:opentelemetry-bom:1.23.1"))
+        implementation(platform("software.amazon.awssdk:bom:2.17.292"))
 
         implementation("org.jetbrains.kotlin:kotlin-stdlib")
     }

@@ -4,7 +4,6 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
     implementation("io.opentelemetry:opentelemetry-extension-kotlin")
@@ -13,8 +12,7 @@ dependencies {
         exclude("io.opentelemetry", "opentelemetry-exporter-logging")
         exclude("io.opentelemetry", "opentelemetry-exporter-otlp")
     }
-    implementation("io.opentelemetry.instrumentation:opentelemetry-spring-webflux-5.0:1.23.0-alpha")
     runtimeOnly("io.opentelemetry.instrumentation:opentelemetry-aws-sdk-2.2-autoconfigure:1.23.0-alpha")
 
-    implementation("software.amazon.awssdk:sns")
+    implementation("software.amazon.awssdk:sqs")
 }
