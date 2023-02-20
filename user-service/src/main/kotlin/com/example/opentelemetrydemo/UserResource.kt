@@ -26,26 +26,28 @@ class UserResource(
 
     @PostMapping("/notify/{name}")
     suspend fun notifyUser(@PathVariable name: String, @RequestParam test: String) {
+        val opentelemetryContext = Context.current()
+
         val baggage = Baggage.current().toBuilder()
             .put("test", test)
             .build()
-
-        val opentelemetryContext = baggage.storeInContext(Context.current())
 
         val span = tracer.spanBuilder("notify-user")
             .setParent(opentelemetryContext)
             .startSpan()
 
-        withContext(currentCoroutineContext() + opentelemetryContext.with(span).asContextElement()) {
+        val testFlag = TestEnvironmentFlag(test == "true")
 
-            logger.info { "1: ${Baggage.current().getEntryValue("test")}" }
+        withContext(currentCoroutineContext() + opentelemetryContext.with(span).with(baggage).with(testFlag).asContextElement()) {
+
+            logger.info { "1: ${TestEnvironmentFlag.isInTestEnv()}" }
 
             val users = externalUserGateway.getUsers()
             logger.info { "users: $users" }
 
             users.firstOrNull { it.name == name }?.let { snsMessagePublisher.publish(it) }
 
-            logger.info { "4: ${Baggage.current().getEntryValue("test")}" }
+            logger.info { "4: ${TestEnvironmentFlag.isInTestEnv()}" }
         }
     }
 

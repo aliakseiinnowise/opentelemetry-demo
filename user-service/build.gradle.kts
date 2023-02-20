@@ -1,4 +1,6 @@
 dependencies {
+    implementation(project(":common"))
+
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")

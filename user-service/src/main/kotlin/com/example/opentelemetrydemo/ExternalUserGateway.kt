@@ -27,7 +27,7 @@ class ExternalUserGateway(
     }
 
     suspend fun getUsers(): List<User> {
-        logger.info { "2: ${Baggage.current().getEntryValue("test")}" }
+        logger.info { "2: ${TestEnvironmentFlag.isInTestEnv()}" }
 
         return webClient.get()
             .uri("/users")
@@ -36,7 +36,7 @@ class ExternalUserGateway(
             .collectList()
             .awaitSingle()
             .also {
-                logger.info { "3: ${Baggage.current().getEntryValue("test")}" }
+                logger.info { "3: ${TestEnvironmentFlag.isInTestEnv()}" }
             }
     }
 

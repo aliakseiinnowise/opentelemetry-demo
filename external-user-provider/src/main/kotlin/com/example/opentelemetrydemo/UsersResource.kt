@@ -23,7 +23,7 @@ class UsersResource {
     suspend fun getUsers(): List<User> {
         val reactorContext = currentCoroutineContext()[ReactorContext]!!.context
         val opentelemeteryContext = getOpenTelemetryContext(reactorContext, Context.current())
-        val testEnvironment = Baggage.fromContext(opentelemeteryContext).getEntryValue("test").toBoolean()
+        val testEnvironment = TestEnvironmentFlag.isInTestEnv(opentelemeteryContext)
 
         logger.info { "Test environment: $testEnvironment" }
 

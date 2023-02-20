@@ -27,7 +27,7 @@ class UserProviderGateway(
     }
 
     suspend fun getUsers(): List<User> {
-        logger.info { "before: ${Baggage.current().getEntryValue("test")}" }
+        logger.info { "before: ${TestEnvironmentFlag.isInTestEnv()}" }
 
         return webClient.get()
             .uri("/users")
@@ -36,7 +36,7 @@ class UserProviderGateway(
             .collectList()
             .awaitSingle()
             .also {
-                logger.info { "after: ${Baggage.current().getEntryValue("test")}" }
+                logger.info { "after: ${TestEnvironmentFlag.isInTestEnv()}" }
             }
     }
 

@@ -1,6 +1,5 @@
 package com.example.opentelemetrydemo
 
-import io.opentelemetry.api.baggage.Baggage
 import mu.KLogging
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.sqs.model.Message
@@ -15,7 +14,7 @@ class LoggingListener : SqsMessageListener {
     override suspend fun onMessage(message: Message) {
         logger.info { "Message: $message" }
 
-        val test = Baggage.current().getEntryValue("test").toBoolean()
+        val test = TestEnvironmentFlag.isInTestEnv()
         logger.info { "Test environment: $test" }
     }
 
